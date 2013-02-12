@@ -1,3 +1,15 @@
+/*
+ * JQuery zTree exedit 3.5.02
+ * http://zTree.me/
+ *
+ * Copyright (c) 2010 Hunter.z
+ *
+ * Licensed same as jquery - MIT License
+ * http://www.opensource.org/licenses/mit-license.php
+ *
+ * email: hunter.z@263.net
+ * Date: 2013-01-28
+ */
 (function($){
 	//default consts of exedit
 	var _consts = {
@@ -286,7 +298,7 @@
 
 			view.editNodeBlur = true;
 			view.cancelCurEditNode(setting, null, true);
-			
+
 
 			var doc = $(document), curNode, tmpArrow, tmpTarget,
 			isOtherTree = false,
@@ -630,9 +642,9 @@
 					var dragTargetNode = tmpTargetNodeId == null ? null: data.getNodeCache(targetSetting, tmpTargetNodeId);
 					if (tools.apply(setting.callback.beforeDrop, [targetSetting.treeId, nodes, dragTargetNode, moveType, isCopy], true) == false) return;
 					var newNodes = isCopy ? tools.clone(nodes) : nodes;
-					
+
 					function dropCallback() {
-						if (isOtherTree) {							
+						if (isOtherTree) {
 							if (!isCopy) {
 								for(var i=0, l=nodes.length; i<l; i++) {
 									view.removeNode(setting, nodes[i]);
@@ -814,7 +826,7 @@
 			var root = data.getRoot(setting),
 			nameKey = setting.data.key.name,
 			node = root.curEditNode;
-			
+
 			if (node) {
 				var inputObj = root.curEditInput;
 				var newName = forceName ? forceName:inputObj.val();
@@ -895,7 +907,7 @@
 			if (moveType != consts.move.TYPE_PREV && moveType != consts.move.TYPE_NEXT) {
 				moveType = consts.move.TYPE_INNER;
 			}
-			
+
 			if (moveType == consts.move.TYPE_INNER) {
 				if (targetNodeIsRoot) {
 					//parentTId of root node is null

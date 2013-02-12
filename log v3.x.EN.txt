@@ -1,0 +1,165 @@
+﻿= ZTree v3.x (JQuery Tree plugin) update log =
+
+<font color="red">In order to better optimize and expand zTree I decided to upgrade to v3.x, which is regrettably is not compatible with the previous v2.x releases. There will be a lot of structural modifications. I hope you understand and can find in your heart to forgive me.</font>
+<font color="red">
+
+Specific modifications reference:
+
+   * [http://www.ztree.me/v3/api.php] zTree v3.0 API documentation
+
+   * [http://www.ztree.me/v3/demo.php#_101] zTree v3.0 Demo
+
+   * [http://www.ztree.me/v3/faq.php#_101] zTree v3.0 FAQ
+
+</font>
+
+For the bug: IE10 AJAX POST cannot be submitted, see:
+http://bugs.jquery.com/ticket/12790  (AJAX Post on IE10 / Windows 8 is not working)                  
+
+<font color=#041594>
+* 2013.01.29 * v3.5.03 beta
+   * [Added] asynchronous loading mode uses the `moveNode` method and moveType != "inner" can lead to child nodes `targetNode` automatically being loaded (bug)
+
+* 2013.01.28 * v3.5.02
+   * [Added] The `setting.check.chkDisabledInherit` attribute may be used during initialization to have the child node inherit the parent node `chkDisabled` attribute
+   * [Deleted] The internal `noSel` method uses the `selectstart` event and `-moz-user-select` style to prohibit the node text from being selected
+   * [Amended] zTree is not compatible with jQuery 1.9 (bug)
+   * [Modified] The `onDrop` event ensures that, when using asynchronous loading mode, you receive the notification after lazy loading has finished to avoid the dragged node has been updated.  CHECK: does he mean before or after?
+   * [Modified] setChkDisabled method increase inheritParent, inheritChildren parameter is set so that the parent-child nodes inherit disabled
+   * [Modified] asynchronous loading the stitching parameters of methods, modified by string to json object
+   * [Fixed] 1-2-33 level nodes, two nodes are all set to nocheck or chkDisabled three nodes checked, the half check status of a node error bug
+   * [Modified] Demo: checkbox_nocheck.html & checkbox_chkDisabled.html;
+   * [Modified] Demo: edit_super.html increase the showRenameBtn & showRemoveBtn demo
+   * [Modified] Demo: asyncForAll modify the post for the get; in order to avoid due to IE10 bug that caused the client and server crashes
+      The IE10 ajax Post does not submit parameter bug (http://bugs.jquery.com/ticket/12790)
+
+* 2012.12.21 * v3.5.01
+   * [Optimization] clone method
+   * [Fixed] initialization children attribute parent node reAsyncChildNodes Error bug
+   * [Augmented] beforeRename callback use cancelEditName method return false result can not be re-edited bug
+   * [Augmented] exedit extension package so setting.data.key.url failure bug
+   * [Augmented] setting.check.autoCheckTrigger set to true, onCheck a callback event parameter is missing bug
+   * [Fixed] singlepath.html Demo bug
+
+* 2012.11.20 * v3.5
+   * [Optimized] original clone (special thanks to: Fisherman's Wharf)
+   * [Modified] the hidden parent node, the parent node is expanded expandAll method of bug
+   * [Modified] to use jQuery v1.7 the set zTree container the ul to hide (visibility: hidden;), the IE browser call selectNode lead error Can't move focus bug
+   * [Modified] being loaded asynchronously perform destory or init method, asynchronous loading node affect new tree bug
+   * [Modified] method reAsyncChildNodes refresh when not empty the internal cache memory leak bug
+   * [Modified] batch node drag to the other parent node (inner), leading to the order reversed bug
+   * [Modified] for nodes using html format can not be triggered by double-clicking the event bug
+   * [Modified] OnCheck callback event to ensure consistent with the triggering event in the event
+   * [Modified] asynchronous loading after selectNode onNodeCreated in node folding the bug
+   * [Modified] of API in dataFilter the parameter name childNodes -> responseData
+   * [Modified] of the API iconSkin the example content
+   * [Amended] API chkDisabled instructions
+   * [Modified] the Demo in index.html loadReady repeat binding problems
+
+* 2012.09.03 * v3.4
+   * [Increase] Demo —— OutLook style menu on the left
+   * [Increase] emptied zTree of $.fn.zTree.destory(treeId) & zTree.destory()
+
+   * [Amended] core core file _eventProxy method get tId method to improve the flexibility of the DOM
+   * [Modified] multilayer parent node checkbox half selection state initialization error bug
+   * [Modified] select both parent and child nodes, getSelectedNodes get the selected node using removeNode delete error bug
+   * [Modified] for treeNode.chkDisabled / nocheck attributes support the format of the string "false" / "true"
+   * [Modified] asynchronous loading mode can not use the server to return xml and continue processing in dataFilter bug
+   * [Modified] title only allows you to set the string type value. Amended to allow the set to the value of the number type
+   * [Modified] the zId count rules & Cache saved reduce IE9 bug that caused memory leaks
+   * [Modified] the API page search function causes IE to crash a bug
+
+* 2012.07.16 * v3.3
+   * [Increased] extension library exhide - node hidden features
+
+   * [Modified] getNodesByFilter, add invokeParam custom parameters
+   * [Modified] drag in the test code is not deleted, resulting in a yellow the iframe mask layer color bug
+   * [Modified] lazy loading method for use expandAll carried Expand cause onNodeCreated a callback and addDiyDom of methods to trigger premature bug
+   * [Modified] moveNode Mobile has not yet been generated DOM node view appears unusual bug
+   * [Modified] Remove node, the relevant node isFirstNode property is not reset bug
+   * [Modified] getPreNode() getNextNode() method in the special circumstances calculated wrong bug
+   * [Modified] settings title, if re-title content set to null, will lead to the title of the bug can not be updated
+   * [Modified] for setting.check.chkStyle == "radio" && setting.check.radioType == "all" situation, getTreeCheckedNodes method optimization, to find a result on break
+   * [Changed] zTreeObj.getCheckedNodes(false) in radioType = "all" the wrong bug
+   * [Modified] to perfect the API beforeDrop / onDrop About treeId Description
+
+* 2012.05.13 * v3.2
+   * [Increased] setting.data.key.url allowed to modify treeNode.url properties
+   * [Added] getNodesByFilter(filter, isSingle) method
+   * [Added] drag and drop and other DOM interaction "Demo (http://www.baby666.cn/v3/demo.php#_511)
+   * [Added] asynchronous loading mode Expand "Demo (http://www.baby666.cn/v3/demo.php#_512)
+
+   * [Augmented] code structure, the of the addNodes, removeNode, removeChildNodes methods and beforeRemove, the onRemove callback transferred to the core within
+   * [Augmented] IE7 environment no child nodes under the parent node repeatedly expand unwanted blank lines bug
+   * [Modified] asynchronous loading, if there is a network anomalies, will cause the icon to display the error bug
+   * [Modified] dataFilter return null result in abnormal bug
+   * [Modified] removeChildNodes methods emptied sub node not function properly add nodes bug
+   * [Modified] Custom elements modify moveNode after node in the event lost bug
+   * [Modified] moveNode, set isSilent = true, if you move to expand the parent node, unusual bug
+   * [Modified] onClick / onDrag / onDrop callback event than the original event. Bug
+   * [Modified] onDrop callback when the drag invalid and can not treeNodes a bug
+   * [Modified] onDrop unable to determine drag move or copy
+   * [Modified] not open asynchronous loading mode, drag the node to the parent node child nodes is empty unusual bug
+   * [Modified] drag the process repeated paddling in the parent node icon will pause bug
+   * [Modified] the drag operation between arrow targetNode background details practical problems, user-friendly drag it easier to distinguish between the prev, next, and the inner operations
+   * [Modified] IE6 / 7 Modify the drag operation on the right of the node <a> 10px cause targetNode = root bug
+   * [Modified] default editing mode edit button, delete button click, if appropriate before the callback return false triggers onClick callback bug
+
+* 2012.02.14 * v3.1
+   * [Added] ajax parameters setting.async.contentType, so submit arguments apply to the json data submitted (mainly applicable to Net developers).
+   * [Added] setting.edit.editNameSelectAll, used to set the edit node name initial input text content Select
+   * [Modified] the asynchronous loading rules no longer rely solely on the parent's child nodes to determine increase the internal properties zAsync, to ensure that the default state of the parent node in a timely manner no child nodes can only be loaded asynchronously unless use reAsyncChildNodes methods force control asynchronous loaded.
+   * [Modified] zoom browser cause interface bugs (needs to be updated: icon icon and css excess cable)
+   * [Modified] in the edit mode, if the node name is longer than the width of the edit box, the left and right arrow keys in the box does not work bug (IE 6 7 8 appear)
+      The CSS filter: alpha (opacity = 80) caused should be ie the bug css files need to be updated
+   * [Augmented] title set, if the attribute is not present, the default is the title for the empty, ease of data fault tolerance and the user the flexibility to use
+   * [Modified] editName, parent node has not yet commenced, will cause the parent node automatically expand bug
+   * [Augmented] label exists in the title the lead title display unusual bugs (for example: 22% of the blue word '`<input/>`)
+
+* 2012.01.10 * v3.0
+   * [Added] setting.check.autoCheckTrigger default value false, the trigger event callback function can set the linkage selected
+   * [Added] setting.callback.beforeEditName callback function, to ensure that users can capture events click on the Edit button
+   * [Added] treeNode.chkDisabled attribute checkbox but the user can not modify the checkbox state, and the checkbox will affect half of the parent node checkbox selected state
+   * [Added] setting.check.nocheckInherit properties, users set the child node inherits the nocheck properties, for batch initialization node does not apply to the display node
+   * [Added] setting.edit.drag.autoExpandTrigger default value of false, can be set to automatically expand the folding operation, the trigger event callback function
+   * [Added] setting.view.nameIsHTML default value of false allows the user name set DOM object
+   * [Added] treeNode.click property documentation
+   * [Added] treeObj.setChkDisabled method used to set the checkbox / radio disabled status
+   * [Added] treeNode.halfCheck, attributes, for mandatory set the node half-selected state
+
+   * [Modified] asynchronous loading & coexistence of editing features, drag the node or add nodes, IE on error bug (apply method causes)
+   * [Augmented] zTreeStyle, style conflict
+   * [Modified] setting.data.key.title, the default value is set to automatically initialized assignment avoid for the setting.data.key.name of such hope title repeated with the same name of the user to set parameters
+   * [Modified] Click the leaf node cable triggers the the expand event the bug
+   * [Modified] IE click on a leaf node connection will appear dotted rectangle bug
+   * [Modified] updateNode led to the the checkbox semi election state error bug
+   * [Modified] checkNode method toggle operation cancel expandAll method toggle operation
+   * [Modified] zTree within input on mouse movement will grab page within the focus of the bug
+   * [Modified] beforeRename / the onRename trigger - will trigger even if the name of the content is not changed to facilitate the end user with the beforeEditName capture editing state, giving users more rights adjustment rules
+   * [Modified] the coexistence with easyUI can not drag bug
+   * [Modified] beforeRename in Firefox if the use of alert, triggers twice bug
+   * [Modified] checkNode / expandNode / removeNode method, the default does not trigger a callback function to restore the default state of v2.6, while increasing callbackFlag parameter is set to true, you can trigger a callback function
+   * [Modified] IE9 under" Find node "according to the parameters Demo error: line 14 redeclare constant attributes (Demo own problems, defined history variables)
+   * [Modified] initialization zTree when the onNodeCreated event callback function can not be used getZTreeObj to get zTree object bug
+   * [Modified] setting.edit.drag.prev / next / inner parameters to increase the collection of nodes to be dragged
+   * [Augmented] asynchronous loading mode, otherParam Array array error bug. For example: ["id", "1", "name", "test"]
+   * [Modified] FireFox under multi-tree drag unusual bug
+   * [Modified] the exedit call excheck library without fault-tolerant processing, cause if not only added exedit excheck when js errors occur
+   * [Modified] bug display the checkbox of zTree in Edit mode, the mobile node does not update the parent node half-selected state
+   * [Change] treeNode.childs -> children; treeObject.removeChilds -> removeChildNodes; setting.data.key.childs -> children (English trifled evil! Sorry!)
+   * [Modified] the onRemove callback treeNode can also find the bug of preNode, nextNode. Amended, getPreNode getNextNode return null; easy to find a parent node, getParentNode remains
+   * [Augmented] simple data model If the id with pId of the same will lead to the node can not load properly bug
+   * [Modified] to move or delete the intermediate node will lead to the the icons smaller of the last node cable bug
+
+* 2011.09.05 * v3.0 beta
+   * [Modified] comprehensive revision zTree js code structure, and split
+   * [Modified] zTree css style comprehensive revision, can better browser compatible, while addressing a previous pixel difference
+   * [Optimized] lazy loading technology node performance of loading large amounts of data at one time the rapid increase
+   * [Added] support multi-node selected at the same time, drag
+   * [Added] checkNode, checkAllNodes a variety of methods such as
+   * [Added] IE6 automatically cancel the expand animation folded
+   * [Fixed] the asynchronous loading & editing mode to perfect coexistence
+   * [Fixed] setting configuration is more reasonable, and increase the number of configuration parameters
+   * [Fixed] treeNode node data attributes more reasonable, and increase the number of methods
+   * [Fixed] the drag operation more flexible, easier to formulate their own rules
+   * [Fixed] a number of other changes, a detailed comparison please refer to the url at [http://www.baby666.cn/v3/faq.php#_101](zTree v3.0 FAQ)

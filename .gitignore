@@ -1,3 +1,7 @@
+# Editor backup files
+*~
+*.bak
+
 #################
 ## Eclipse
 #################
@@ -161,3 +165,7 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+# Ubuntu / Dolphin
+.directory
+

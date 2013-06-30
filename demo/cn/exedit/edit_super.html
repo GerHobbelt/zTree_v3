@@ -73,9 +73,9 @@
 		function onRemove(e, treeId, treeNode) {
 			showLog("[ "+getTime()+" onRemove ]&nbsp;&nbsp;&nbsp;&nbsp; " + treeNode.name);
 		}
-		function beforeRename(treeId, treeNode, newName) {
+		function beforeRename(treeId, treeNode, newName, isCancel) {
 			className = (className === "dark" ? "":"dark");
-			showLog("[ "+getTime()+" beforeRename ]&nbsp;&nbsp;&nbsp;&nbsp; " + treeNode.name);
+			showLog((isCancel ? "<span style='color:red'>":"") + "[ "+getTime()+" beforeRename ]&nbsp;&nbsp;&nbsp;&nbsp; " + treeNode.name + (isCancel ? "</span>":""));
 			if (newName.length == 0) {
 				alert("节点名称不能为空.");
 				var zTree = $.fn.zTree.getZTreeObj("treeDemo");
@@ -84,8 +84,8 @@
 			}
 			return true;
 		}
-		function onRename(e, treeId, treeNode) {
-			showLog("[ "+getTime()+" onRename ]&nbsp;&nbsp;&nbsp;&nbsp; " + treeNode.name);
+		function onRename(e, treeId, treeNode, isCancel) {
+			showLog((isCancel ? "<span style='color:red'>":"") + "[ "+getTime()+" onRename ]&nbsp;&nbsp;&nbsp;&nbsp; " + treeNode.name + (isCancel ? "</span>":""));
 		}
 		function showRemoveBtn(treeId, treeNode) {
 			return !treeNode.isFirstNode;
@@ -112,11 +112,11 @@
 		var newCount = 1;
 		function addHoverDom(treeId, treeNode) {
 			var sObj = $("#" + treeNode.tId + "_span");
-			if (treeNode.editNameFlag || $("#addBtn_"+treeNode.id).length>0) return;
-			var addStr = "<span class='button add' id='addBtn_" + treeNode.id
+			if (treeNode.editNameFlag || $("#addBtn_"+treeNode.tId).length>0) return;
+			var addStr = "<span class='button add' id='addBtn_" + treeNode.tId
 				+ "' title='add node' onfocus='this.blur();'></span>";
 			sObj.after(addStr);
-			var btn = $("#addBtn_"+treeNode.id);
+			var btn = $("#addBtn_"+treeNode.tId);
 			if (btn) btn.bind("click", function(){
 				var zTree = $.fn.zTree.getZTreeObj("treeDemo");
 				zTree.addNodes(treeNode, {id:(100 + newCount), pId:treeNode.id, name:"new node" + (newCount++)});
@@ -124,7 +124,7 @@
 			});
 		};
 		function removeHoverDom(treeId, treeNode) {
-			$("#addBtn_"+treeNode.id).unbind().remove();
+			$("#addBtn_"+treeNode.tId).unbind().remove();
 		};
 		function selectAll() {
 			var zTree = $.fn.zTree.getZTreeObj("treeDemo");
@@ -161,7 +161,7 @@
 				<li class="highlight_red">可以利用 beforeEditName 触发自定义的编辑操作</li>
 				<li><p><span class="highlight_red">在对这些灵活的配置熟悉以后，相信你能够做出更加合理的编辑界面！</span><br/>
 					&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="selectAll" checked /> 编辑名称时是否全选 text<br/>
-					remove / rename log:<br/>
+					remove / rename log:&nbsp;&nbsp;<span style="color:red">红色</span> 表示取消编辑操作 (v3.5.13+)<br/>
 					<ul id="log" class="log"></ul></p>
 				</li>
 				</ul>

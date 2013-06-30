@@ -17,6 +17,10 @@
 遗留问题 iframe-shim：http://tieba.baidu.com/p/2335038886
 
 
+*2013.06.28* v3.5.14
+   * 【修改】 拖拽节点时 iframe 遮罩异常的bug
+   * 【修改】 清空子节点后重新添加子节点无法显示的bug
+
 *2013.06.02* v3.5.13
 
    * 【增加】beforeRename & onRename 增加 isCancel 参数，可以监控用户 ESC 取消编辑的事件

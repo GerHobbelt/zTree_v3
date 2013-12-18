@@ -1,5 +1,5 @@
 /*
- * JQuery zTree exedit v3.5.15
+ * JQuery zTree exedit v3.5.16-beta.4
  * http://zTree.me/
  *
  * Copyright (c) 2010 Hunter.z
@@ -8,7 +8,7 @@
  * http://www.opensource.org/licenses/mit-license.php
  *
  * email: hunter.z@263.net
- * Date: 2013-10-15
+ * Date: 2013-12-13
  */
 (function($){
 	//default consts of exedit
@@ -17,7 +17,8 @@
 			DRAG: "ztree_drag",
 			DROP: "ztree_drop",
 			REMOVE: "ztree_remove",
-			RENAME: "ztree_rename"
+			RENAME: "ztree_rename",
+			DRAGMOVE:"ztree_dragmove"
 		},
 		id: {
 			EDIT: "_edit",
@@ -69,6 +70,7 @@
 			beforeEditName:null,
 			beforeRename:null,
 			onDrag:null,
+			onDragMove:null,
 			onDrop:null,
 			onRename:null
 		}
@@ -102,6 +104,10 @@
 			tools.apply(setting.callback.onDrag, [srcEvent, treeId, treeNodes]);
 		});
 
+		o.bind(c.DRAGMOVE,function(event, srcEvent, treeId, treeNodes){
+			tools.apply(setting.callback.onDragMove,[srcEvent, treeId, treeNodes]);
+		});
+
 		o.bind(c.DROP, function (event, srcEvent, treeId, treeNodes, targetNode, moveType, isCopy) {
 			tools.apply(setting.callback.onDrop, [srcEvent, treeId, treeNodes, targetNode, moveType, isCopy]);
 		});
@@ -112,6 +118,7 @@
 		o.unbind(c.RENAME);
 		o.unbind(c.REMOVE);
 		o.unbind(c.DRAG);
+		o.unbind(c.DRAGMOVE);
 		o.unbind(c.DROP);
 	},
 	//default event proxy of exedit
@@ -502,7 +509,7 @@
 					var dY = 0;
 					if (tmpTarget && tmpTarget.attr("id")!=targetSetting.treeId) {
 						var tmpTargetNode = tmpTargetNodeId == null ? null: data.getNodeCache(targetSetting, tmpTargetNodeId),
-						isCopy = (event.ctrlKey && setting.edit.drag.isMove && setting.edit.drag.isCopy) || (!setting.edit.drag.isMove && setting.edit.drag.isCopy),
+						isCopy = ((event.ctrlKey || event.metaKey) && setting.edit.drag.isMove && setting.edit.drag.isCopy) || (!setting.edit.drag.isMove && setting.edit.drag.isCopy),
 						isPrev = !!(preNode && tmpTargetNodeId === preNode.tId),
 						isNext = !!(nextNode && tmpTargetNodeId === nextNode.tId),
 						isInner = (tmpNode.parentTId && tmpNode.parentTId == tmpTargetNodeId),
@@ -591,6 +598,8 @@
 					}
 					preTmpTargetNodeId = tmpTargetNodeId;
 					preTmpMoveType = moveType;
+
+					setting.treeObj.trigger(consts.event.DRAGMOVE, [event, setting.treeId, nodes]);
 				}
 				return false;
 			}
@@ -630,7 +639,7 @@
 				if (curNode) curNode.remove();
 				if (tmpArrow) tmpArrow.remove();
 
-				var isCopy = (event.ctrlKey && setting.edit.drag.isMove && setting.edit.drag.isCopy) || (!setting.edit.drag.isMove && setting.edit.drag.isCopy);
+				var isCopy = ((event.ctrlKey || event.metaKey) && setting.edit.drag.isMove && setting.edit.drag.isCopy) || (!setting.edit.drag.isMove && setting.edit.drag.isCopy);
 				if (!isCopy && tmpTarget && tmpTargetNodeId && nodes[0].parentTId && tmpTargetNodeId==nodes[0].parentTId && moveType == consts.move.TYPE_INNER) {
 					tmpTarget = null;
 				}

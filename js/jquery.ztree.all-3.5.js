@@ -1,6 +1,6 @@
 
 /*
- * JQuery zTree core v3.5.18
+ * JQuery zTree core v3.5.19.3
  * http://zTree.me/
  *
  * Copyright (c) 2010 Hunter.z
@@ -9,7 +9,7 @@
  * http://www.opensource.org/licenses/mit-license.php
  *
  * email: hunter.z@263.net
- * Date: 2015-08-26
+ * Date: 2015-12-04
  */
 (function($){
 	var settings = {}, roots = {}, caches = {},
@@ -19,7 +19,8 @@
 			BUTTON: "button",
 			LEVEL: "level",
 			ICO_LOADING: "ico_loading",
-			SWITCH: "switch"
+			SWITCH: "switch",
+			NAME: 'node_name'
 		},
 		event: {
 			NODECREATED: "ztree_nodeCreated",
@@ -308,6 +309,8 @@
 		n.getParentNode = function() {return data.getNodeCache(setting, n.parentTId);};
 		n.getPreNode = function() {return data.getPreNode(setting, n);};
 		n.getNextNode = function() {return data.getNextNode(setting, n);};
+		n.getIndex = function() {return data.getNodeIndex(setting, n);};
+		n.getPath = function() {return data.getNodePath(setting, n);};
 		n.isAjaxing = false;
 		data.fixPIdKeyValue(setting, n);
 	},
@@ -366,15 +369,30 @@
 		addInitRoot: function(initRoot) {
 			_init.roots.push(initRoot);
 		},
-		addNodesData: function(setting, parentNode, nodes) {
-			var childKey = setting.data.key.children;
-			if (!parentNode[childKey]) parentNode[childKey] = [];
-			if (parentNode[childKey].length > 0) {
+		addNodesData: function(setting, parentNode, index, nodes) {
+			var childKey = setting.data.key.children, params;
+			if (!parentNode[childKey]) {
+				parentNode[childKey] = [];
+				index = -1;
+			} else if (index >= parentNode[childKey].length) {
+				index = -1;
+			}
+
+			if (parentNode[childKey].length > 0 && index === 0) {
+				parentNode[childKey][0].isFirstNode = false;
+				view.setNodeLineIcos(setting, parentNode[childKey][0]);
+			} else if (parentNode[childKey].length > 0 && index < 0) {
 				parentNode[childKey][parentNode[childKey].length - 1].isLastNode = false;
 				view.setNodeLineIcos(setting, parentNode[childKey][parentNode[childKey].length - 1]);
 			}
 			parentNode.isParent = true;
-			parentNode[childKey] = parentNode[childKey].concat(nodes);
+
+			if (index<0) {
+				parentNode[childKey] = parentNode[childKey].concat(nodes);
+			} else {
+				params = [index, 0].concat(nodes);
+				parentNode[childKey].splice.apply(parentNode[childKey], params);
+			}
 		},
 		addSelectedNode: function(setting, node) {
 			var root = data.getRoot(setting);
@@ -422,6 +440,17 @@
 		getCache: function(setting) {
 			return caches[setting.treeId];
 		},
+		getNodeIndex: function(setting, node) {
+			if (!node) return null;
+			var childKey = setting.data.key.children,
+			p = node.parentTId ? node.getParentNode() : data.getRoot(setting);
+			for (var i=0, l=p[childKey].length-1; i<=l; i++) {
+				if (p[childKey][i] === node) {
+					return i;
+				}
+			}
+			return -1;
+		},
 		getNextNode: function(setting, node) {
 			if (!node) return null;
 			var childKey = setting.data.key.children,
@@ -453,6 +482,22 @@
 		getNodeName: function(setting, node) {
 			var nameKey = setting.data.key.name;
 			return "" + node[nameKey];
+		},
+		getNodePath: function(setting, node) {
+			if (!node) return null;
+
+			var path;
+			if(node.parentTId) {
+				path = node.getParentNode().getPath();
+			} else {
+				path = [];
+			}
+
+			if (path) {
+				path.push(node);
+			}
+
+			return path;
 		},
 		getNodeTitle: function(setting, node) {
 			var t = setting.data.key.title === "" ? setting.data.key.name : setting.data.key.title;
@@ -644,11 +689,7 @@
 			o = setting.treeObj;
 			if (!setting.view.txtSelectedEnable) {
 				// for can't select text
-				o.bind('selectstart', function(e){
-					var node
-					var n = e.originalEvent.srcElement.nodeName.toLowerCase();
-					return (n === "input" || n === "textarea" );
-				}).css({
+				o.bind('selectstart', handler.onSelectStart).css({
 					"-moz-user-select":"-moz-none"
 				});
 			}
@@ -662,13 +703,14 @@
 		},
 		unbindTree: function(setting) {
 			var o = setting.treeObj;
-			o.unbind('click', event.proxy)
-			.unbind('dblclick', event.proxy)
-			.unbind('mouseover', event.proxy)
-			.unbind('mouseout', event.proxy)
-			.unbind('mousedown', event.proxy)
-			.unbind('mouseup', event.proxy)
-			.unbind('contextmenu', event.proxy);
+			o.unbind('selectstart', handler.onSelectStart)
+				.unbind('click', event.proxy)
+				.unbind('dblclick', event.proxy)
+				.unbind('mouseover', event.proxy)
+				.unbind('mouseout', event.proxy)
+				.unbind('mousedown', event.proxy)
+				.unbind('mouseup', event.proxy)
+				.unbind('contextmenu', event.proxy);
 		},
 		doProxy: function(e) {
 			var results = [];
@@ -754,6 +796,10 @@
 				tools.apply(setting.callback.onRightClick, [event, setting.treeId, node]);
 			}
 			return (typeof setting.callback.onRightClick) != "function";
+		},
+		onSelectStart: function(e){
+			var n = e.originalEvent.srcElement.nodeName.toLowerCase();
+			return (n === "input" || n === "textarea" );
 		}
 	},
 	//method of tools for zTree
@@ -817,7 +863,7 @@
 	},
 	//method of operate ztree dom
 	view = {
-		addNodes: function(setting, parentNode, newNodes, isSilent) {
+		addNodes: function(setting, parentNode, index, newNodes, isSilent) {
 			if (setting.data.keep.leaf && parentNode && !parentNode.isParent) {
 				return;
 			}
@@ -841,27 +887,34 @@
 					});
 				}
 
-				data.addNodesData(setting, parentNode, newNodes);
-				view.createNodes(setting, parentNode.level + 1, newNodes, parentNode);
+				data.addNodesData(setting, parentNode, index, newNodes);
+				view.createNodes(setting, parentNode.level + 1, newNodes, parentNode, index);
 				if (!isSilent) {
 					view.expandCollapseParentNode(setting, parentNode, true);
 				}
 			} else {
-				data.addNodesData(setting, data.getRoot(setting), newNodes);
-				view.createNodes(setting, 0, newNodes, null);
+				data.addNodesData(setting, data.getRoot(setting), index, newNodes);
+				view.createNodes(setting, 0, newNodes, null, index);
 			}
 		},
-		appendNodes: function(setting, level, nodes, parentNode, initFlag, openFlag) {
+		appendNodes: function(setting, level, nodes, parentNode, index, initFlag, openFlag) {
 			if (!nodes) return [];
 			var html = [],
 			childKey = setting.data.key.children;
+
+			var tmpPNode = (parentNode) ? parentNode: data.getRoot(setting),
+				tmpPChild = tmpPNode[childKey],
+				isFirstNode, isLastNode;
+
+			if (!tmpPChild || index >= tmpPChild.length) {
+				index = -1;
+			}
+
 			for (var i = 0, l = nodes.length; i < l; i++) {
 				var node = nodes[i];
 				if (initFlag) {
-					var tmpPNode = (parentNode) ? parentNode: data.getRoot(setting),
-					tmpPChild = tmpPNode[childKey],
-					isFirstNode = ((tmpPChild.length == nodes.length) && (i == 0)),
-					isLastNode = (i == (nodes.length - 1));
+					isFirstNode = ((index===0 || tmpPChild.length == nodes.length) && (i == 0));
+					isLastNode = (index < 0 && i == (nodes.length - 1));
 					data.initNode(setting, level, node, parentNode, isFirstNode, isLastNode, openFlag);
 					data.addNodeCache(setting, node);
 				}
@@ -869,7 +922,7 @@
 				var childHtml = [];
 				if (node[childKey] && node[childKey].length > 0) {
 					//make child html first, because checkType
-					childHtml = view.appendNodes(setting, level + 1, node[childKey], node, initFlag, openFlag && node.open);
+					childHtml = view.appendNodes(setting, level + 1, node[childKey], node, -1, initFlag, openFlag && node.open);
 				}
 				if (openFlag) {
 
@@ -903,7 +956,7 @@
 				ulObj.remove();
 			}
 			var childKey = setting.data.key.children,
-			childHtml = view.appendNodes(setting, node.level+1, node[childKey], node, false, true);
+			childHtml = view.appendNodes(setting, node.level+1, node[childKey], node, -1, false, true);
 			view.makeUlHtml(setting, node, html, childHtml.join(''));
 			nObj.append(html.join(''));
 		},
@@ -975,9 +1028,9 @@
 					view.setNodeLineIcos(setting, node);
 					if (newNodes && newNodes !== "") {
 						newNodes = tools.apply(setting.async.dataFilter, [setting.treeId, node, newNodes], newNodes);
-						view.addNodes(setting, node, !!newNodes ? tools.clone(newNodes) : [], !!isSilent);
+						view.addNodes(setting, node, -1, !!newNodes ? tools.clone(newNodes) : [], !!isSilent);
 					} else {
-						view.addNodes(setting, node, [], !!isSilent);
+						view.addNodes(setting, node, -1, [], !!isSilent);
 					}
 					setting.treeObj.trigger(consts.event.ASYNC_SUCCESS, [setting.treeId, node, msg]);
 					tools.apply(callback);
@@ -1022,21 +1075,36 @@
 				}
 			}
 		},
-		createNodes: function(setting, level, nodes, parentNode) {
+		createNodes: function(setting, level, nodes, parentNode, index) {
 			if (!nodes || nodes.length == 0) return;
 			var root = data.getRoot(setting),
 			childKey = setting.data.key.children,
 			openFlag = !parentNode || parentNode.open || !!$$(parentNode[childKey][0], setting).get(0);
 			root.createdNodes = [];
-			var zTreeHtml = view.appendNodes(setting, level, nodes, parentNode, true, openFlag);
+			var zTreeHtml = view.appendNodes(setting, level, nodes, parentNode, index, true, openFlag),
+				parentObj, nextObj;
+
 			if (!parentNode) {
-				setting.treeObj.append(zTreeHtml.join(''));
+				parentObj = setting.treeObj;
+				//setting.treeObj.append(zTreeHtml.join(''));
 			} else {
 				var ulObj = $$(parentNode, consts.id.UL, setting);
 				if (ulObj.get(0)) {
-					ulObj.append(zTreeHtml.join(''));
+					parentObj = ulObj;
+					//ulObj.append(zTreeHtml.join(''));
 				}
 			}
+			if (parentObj) {
+				if (index >= 0) {
+					nextObj = parentObj.children()[index];
+				}
+				if (index >=0 && nextObj) {
+					$(nextObj).before(zTreeHtml.join(''));
+				} else {
+					parentObj.append(zTreeHtml.join(''));
+				}
+			}
+
 			view.createNodeCallback(setting);
 		},
 		destroy: function(setting) {
@@ -1159,6 +1227,7 @@
 			html.push("<span id='", node.tId, consts.id.ICON,
 				"' title='' treeNode", consts.id.ICON," class='", view.makeNodeIcoClass(setting, node),
 				"' style='", view.makeNodeIcoStyle(setting, node), "'></span><span id='", node.tId, consts.id.SPAN,
+				"' class='", consts.className.NAME,
 				"'>",name,"</span>");
 		},
 		makeDOMNodeLine: function(html, setting, node) {
@@ -1520,13 +1589,24 @@
 
 			var zTreeTools = {
 				setting : setting,
-				addNodes : function(parentNode, newNodes, isSilent) {
-					if (!newNodes) return null;
+				addNodes : function(parentNode, index, newNodes, isSilent) {
 					if (!parentNode) parentNode = null;
 					if (parentNode && !parentNode.isParent && setting.data.keep.leaf) return null;
+
+					var i = parseInt(index, 10);
+					if (isNaN(i)) {
+						isSilent = !!newNodes;
+						newNodes = index;
+						index = -1;
+					} else {
+						index = i;
+					}
+					if (!newNodes) return null;
+
+
 					var xNewNodes = tools.clone(tools.isArray(newNodes)? newNodes: [newNodes]);
 					function addCallback() {
-						view.addNodes(setting, parentNode, xNewNodes, (isSilent==true));
+						view.addNodes(setting, parentNode, index, xNewNodes, (isSilent==true));
 					}
 
 					if (tools.canAsync(setting, parentNode)) {
@@ -1568,15 +1648,24 @@
 
 					data.getRoot(setting).expandTriggerFlag = callbackFlag;
 					if (!tools.canAsync(setting, node) && sonSign) {
-						view.expandCollapseSonNode(setting, node, expandFlag, true, function() {
-							if (focus !== false) {try{$$(node, setting).focus().blur();}catch(e){}}
-						});
+						view.expandCollapseSonNode(setting, node, expandFlag, true, showNodeFocus);
 					} else {
 						node.open = !expandFlag;
 						view.switchNode(this.setting, node);
-						if (focus !== false) {try{$$(node, setting).focus().blur();}catch(e){}}
+						showNodeFocus();
 					}
 					return expandFlag;
+
+					function showNodeFocus() {
+						var a = $$(node, setting).get(0);
+						if (a && focus !== false) {
+							if (a.scrollIntoView) {
+								a.scrollIntoView();
+							} else {
+								try{a.focus().blur();}catch(e){}
+							}
+						}
+					}
 				},
 				getNodes : function() {
 					return data.getNodes(setting);
@@ -1649,7 +1738,7 @@
 					data.initRoot(setting);
 					root[setting.data.key.children] = nodes
 					data.initCache(setting);
-					view.createNodes(setting, 0, root[setting.data.key.children]);
+					view.createNodes(setting, 0, root[setting.data.key.children], null, -1);
 				},
 				removeChildNodes : function(node) {
 					if (!node) return null;
@@ -1672,13 +1761,22 @@
 					if (tools.uCanDo(setting)) {
 						addFlag = setting.view.selectedMulti && addFlag;
 						if (node.parentTId) {
-							view.expandCollapseParentNode(setting, node.getParentNode(), true, false, function() {
-								try{$$(node, setting).focus().blur();}catch(e){}
-							});
+							view.expandCollapseParentNode(setting, node.getParentNode(), true, false, showNodeFocus);
 						} else {
 							try{$$(node, setting).focus().blur();}catch(e){}
 						}
 						view.selectNode(setting, node, addFlag);
+					}
+
+					function showNodeFocus() {
+						var a = $$(node, setting).get(0);
+						if (a) {
+							if (a.scrollIntoView) {
+								a.scrollIntoView();
+							} else {
+								try{a.focus().blur();}catch(e){}
+							}
+						}
 					}
 				},
 				transformTozTreeNodes : function(simpleNodes) {
@@ -1703,7 +1801,7 @@
 			data.setZTreeTools(setting, zTreeTools);
 
 			if (root[childKey] && root[childKey].length > 0) {
-				view.createNodes(setting, 0, root[childKey]);
+				view.createNodes(setting, 0, root[childKey], null, -1);
 			} else if (setting.async.enable && setting.async.url && setting.async.url !== '') {
 				view.asyncNode(setting);
 			}
@@ -1716,7 +1814,7 @@
 	consts = zt.consts;
 })(jQuery);
 /*
- * JQuery zTree excheck v3.5.18
+ * JQuery zTree excheck v3.5.19.3
  * http://zTree.me/
  *
  * Copyright (c) 2010 Hunter.z
@@ -1725,7 +1823,7 @@
  * http://www.opensource.org/licenses/mit-license.php
  *
  * email: hunter.z@263.net
- * Date: 2015-08-26
+ * Date: 2015-12-04
  */
 (function($){
 	//default consts of excheck
@@ -2317,7 +2415,7 @@
 	data.addZTreeTools(_zTreeTools);
 
 	var _createNodes = view.createNodes;
-	view.createNodes = function(setting, level, nodes, parentNode) {
+	view.createNodes = function(setting, level, nodes, parentNode, index) {
 		if (_createNodes) _createNodes.apply(view, arguments);
 		if (!nodes) return;
 		view.repairParentChkClassWithSelf(setting, parentNode);
@@ -2332,7 +2430,7 @@
 	}
 
 	var _appendNodes = view.appendNodes;
-	view.appendNodes = function(setting, level, nodes, parentNode, initFlag, openFlag) {
+	view.appendNodes = function(setting, level, nodes, parentNode, index, initFlag, openFlag) {
 		var html = "";
 		if (_appendNodes) {
 			html = _appendNodes.apply(view, arguments);
@@ -2344,7 +2442,7 @@
 	}
 })(jQuery);
 /*
- * JQuery zTree exedit v3.5.18
+ * JQuery zTree exedit v3.5.19.3
  * http://zTree.me/
  *
  * Copyright (c) 2010 Hunter.z
@@ -2353,7 +2451,7 @@
  * http://www.opensource.org/licenses/mit-license.php
  *
  * email: hunter.z@263.net
- * Date: 2015-08-26
+ * Date: 2015-12-04
  */
 (function($){
 	//default consts of exedit
@@ -2537,7 +2635,7 @@
 			}
 			if (moveType == consts.move.TYPE_INNER) {
 				function copyCallback() {
-					view.addNodes(_this.setting, targetNode, [newNode], isSilent);
+					view.addNodes(_this.setting, targetNode, -1, [newNode], isSilent);
 				}
 
 				if (tools.canAsync(this.setting, targetNode)) {
@@ -2546,7 +2644,7 @@
 					copyCallback();
 				}
 			} else {
-				view.addNodes(this.setting, targetNode.parentNode, [newNode], isSilent);
+				view.addNodes(this.setting, targetNode.parentNode, -1, [newNode], isSilent);
 				view.moveNode(this.setting, targetNode, newNode, moveType, false, isSilent);
 			}
 			return newNode;
@@ -3003,26 +3101,16 @@
 								}
 							}
 							if (moveType == consts.move.TYPE_INNER) {
-								view.addNodes(targetSetting, dragTargetNode, newNodes);
+								view.addNodes(targetSetting, dragTargetNode, -1, newNodes);
 							} else {
-								view.addNodes(targetSetting, dragTargetNode.getParentNode(), newNodes);
-								if (moveType == consts.move.TYPE_PREV) {
-									for (i=0, l=newNodes.length; i<l; i++) {
-										view.moveNode(targetSetting, dragTargetNode, newNodes[i], moveType, false);
-									}
-								} else {
-									for (i=-1, l=newNodes.length-1; i<l; l--) {
-										view.moveNode(targetSetting, dragTargetNode, newNodes[l], moveType, false);
-									}
-								}
+								view.addNodes(targetSetting, dragTargetNode.getParentNode(), moveType == consts.move.TYPE_PREV ? dragTargetNode.getIndex() : dragTargetNode.getIndex()+1, newNodes);
 							}
 						} else {
 							if (isCopy && moveType == consts.move.TYPE_INNER) {
-								view.addNodes(targetSetting, dragTargetNode, newNodes);
+								view.addNodes(targetSetting, dragTargetNode, -1, newNodes);
+							} else if (isCopy) {
+								view.addNodes(targetSetting, dragTargetNode.getParentNode(), moveType == consts.move.TYPE_PREV ? dragTargetNode.getIndex() : dragTargetNode.getIndex()+1, newNodes);
 							} else {
-								if (isCopy) {
-									view.addNodes(targetSetting, dragTargetNode.getParentNode(), newNodes);
-								}
 								if (moveType != consts.move.TYPE_NEXT) {
 									for (i=0, l=newNodes.length; i<l; i++) {
 										view.moveNode(targetSetting, dragTargetNode, newNodes[i], moveType, false);
@@ -3035,7 +3123,15 @@
 							}
 						}
 						view.selectNodes(targetSetting, newNodes);
-						$$(newNodes[0], setting).focus().blur();
+
+						var a = $$(newNodes[0], setting).get(0);
+						if (a) {
+							if (a.scrollIntoView) {
+								a.scrollIntoView();
+							} else {
+								try{a.focus().blur();}catch(e){}
+							}
+						}
 
 						setting.treeObj.trigger(consts.event.DROP, [event, targetSetting.treeId, newNodes, dragTargetNode, moveType, isCopy]);
 					}
@@ -3291,7 +3387,7 @@
 			}
 			var nodeDom = $$(node, setting);
 			if (!nodeDom.get(0)) {
-				nodeDom = view.appendNodes(setting, node.level, [node], null, false, true).join('');
+				nodeDom = view.appendNodes(setting, node.level, [node], null, -1, false, true).join('');
 			} else if (!targetObj.get(0)) {
 				nodeDom.remove();
 			}
@@ -3485,7 +3581,7 @@
 	}
 
 	var _createNodes = view.createNodes;
-	view.createNodes = function(setting, level, nodes, parentNode) {
+	view.createNodes = function(setting, level, nodes, parentNode, index) {
 		if (_createNodes) {
 			_createNodes.apply(view, arguments);
 		}
